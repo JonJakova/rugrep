@@ -2,6 +2,8 @@ use std::error::Error;
 use std::fs;
 use std::env;
 
+mod tests;
+
 pub struct Config {
     pub query: String,
     pub filename: String,
@@ -16,7 +18,14 @@ impl Config {
 
         let query = args[1].clone();
         let filename = args[2].clone();
-        let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
+        let mut case_sensitive = env::var("CASE_INSENSITIVE").is_err();
+
+        if args.len() > 3 {
+            match args[3].as_str() {
+                "--case-insensitive" => case_sensitive = false,
+                _ => case_sensitive = true,
+            }
+        }
 
         return Ok(Config { query, filename, case_sensitive });
     }
@@ -58,36 +67,4 @@ pub fn search_case_sensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str>
         output.push(line);
     }
     return output;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn case_sensitive() {
-        let query = "duct";
-        let contents = "\
-        Rust:
-safe, fast, productive
-Pick three.
-Duct tape.";
-
-        assert_eq!(vec!["safe, fast, productive"], search(query, contents));
-    }
-
-    #[test]
-    fn case_insensitive() {
-        let query = "RuST";
-        let contents = "\
-Rust:
-safe, fast, productive.
-Pick three.
-Trust me.";
-
-        assert_eq!(
-            vec!["Rust:", "Trust me."],
-            search_case_sensitive(query, contents)
-        );
-    }
 }
